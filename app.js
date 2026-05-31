@@ -136,29 +136,28 @@ function getVisibleChapters(book, payload, route) {
 }
 
 function getChapter(book, payload, route) {
-  const visible = getVisibleChapters(book, payload, route);
-  return visible.find((chapter) => chapter.id === state.chapterId) || visible[0] || payload.chapters[0];
+  return payload.chapters.find((chapter) => chapter.id === state.chapterId)
+    || getVisibleChapters(book, payload, route)[0]
+    || payload.chapters[0];
 }
 
-function groupedByVolume(chapters) {
-  return chapters.reduce((groups, chapter) => {
-    const existing = groups.find((group) => group.volume === chapter.volume);
-    if (existing) {
-      existing.items.push(chapter);
-    } else {
-      groups.push({ volume: chapter.volume, items: [chapter] });
-    }
-    return groups;
-  }, []);
+function routeForChapter(book, chapter) {
+  return book.routes.find((item) => item.chapters.includes(chapter.title)) || book.routes[0];
+}
+
+function routeChapters(payload, route) {
+  return route.chapters
+    .map((title) => payload.chapters.find((chapter) => chapter.title === title))
+    .filter(Boolean);
 }
 
 function renderBook(book) {
   applySettings();
   const payload = buildBookPayload(book);
   const route = getRoute(book);
-  const chapters = getVisibleChapters(book, payload, route);
   const chapter = getChapter(book, payload, route);
-  state.routeId = route.id;
+  const activeRoute = routeForChapter(book, chapter);
+  state.routeId = activeRoute.id;
   state.chapterId = chapter.id;
   localStorage.setItem("library-route", state.routeId);
   localStorage.setItem("library-chapter", state.chapterId);
@@ -197,29 +196,26 @@ function renderBook(book) {
             </select>
           </div>
         </section>
-        <div class="toc-label">精读路线</div>
-        <div class="route-list">
-          ${book.routes.map((item) => `
-            <button class="route-button ${item.id === route.id ? "active" : ""}" type="button" data-route="${item.id}">
-              <strong>${escapeHtml(item.title)}</strong>
-              <span>${escapeHtml(item.summary)}</span>
-            </button>
-          `).join("")}
-        </div>
-        <div class="toc-label">章节目录</div>
-        <div class="chapter-list">
-          ${groupedByVolume(chapters).map((group) => `
-            <section class="volume-group">
-              <h2>${escapeHtml(group.volume)}</h2>
-              ${group.items.map((item) => `
-                <button class="chapter-button ${item.id === chapter.id ? "active" : ""}" type="button" data-chapter="${item.id}">
-                  <strong>${escapeHtml(item.title)}</strong>
-                  <span>${item.translation.length} 段译文 · ${item.translation.length ? "已译" : "待补"}</span>
-                </button>
-              `).join("")}
+        <div class="toc-label">精读目录</div>
+        <nav class="outline-list" aria-label="章节目录">
+          ${book.routes.map((item, routeIndex) => `
+            <section class="outline-section ${item.id === activeRoute.id ? "active" : ""}">
+              <h2><span>${routeIndex + 1}</span>${escapeHtml(item.title)}</h2>
+              <ol>
+                ${routeChapters(payload, item).map((chapterItem, chapterIndex) => `
+                  <li>
+                    <button class="outline-chapter ${chapterItem.id === chapter.id ? "active" : ""}" type="button" data-route="${item.id}" data-chapter="${chapterItem.id}">
+                      <span class="outline-number">${chapterIndex + 1}</span>
+                      <span class="outline-title">${escapeHtml(chapterItem.title)}</span>
+                      <span class="outline-meta">${escapeHtml(chapterItem.volume)}</span>
+                    </button>
+                  </li>
+                `).join("")}
+              </ol>
+              <p>${escapeHtml(item.summary)}</p>
             </section>
           `).join("")}
-        </div>
+        </nav>
       </aside>
       <main class="reader-main">
         <section class="book-hero">
@@ -236,7 +232,7 @@ function renderBook(book) {
         <article class="chapter-panel">
           <header class="chapter-head">
             <div>
-              <div class="chapter-meta">${escapeHtml(chapter.volume)} · ${escapeHtml(route.title)}</div>
+              <div class="chapter-meta">${escapeHtml(chapter.volume)} · ${escapeHtml(activeRoute.title)}</div>
               <h3>${escapeHtml(chapter.title)}</h3>
             </div>
             <span class="tag">${chapter.translation.length} 段译文</span>
@@ -284,16 +280,9 @@ function renderBook(book) {
     document.body.classList.remove("toc-open");
   });
 
-  document.querySelectorAll("[data-route]").forEach((button) => {
-    button.addEventListener("click", () => {
-      state.routeId = button.dataset.route;
-      state.chapterId = "";
-      document.body.classList.remove("toc-open");
-      renderBook(book);
-    });
-  });
   document.querySelectorAll("[data-chapter]").forEach((button) => {
     button.addEventListener("click", () => {
+      state.routeId = button.dataset.route || state.routeId;
       state.chapterId = button.dataset.chapter;
       document.body.classList.remove("toc-open");
       renderBook(book);

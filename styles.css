@@ -122,9 +122,7 @@ h1 {
 .settings select,
 .settings button,
 .back-link,
-.book-card,
-.route-button,
-.chapter-button {
+.book-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -317,69 +315,95 @@ body.dark .reader-sidebar {
   font-weight: 700;
 }
 
-.route-list {
+.outline-list {
+  display: grid;
+  gap: 8px;
+}
+
+.outline-section {
+  border-left: 2px solid var(--line);
+  padding-left: 10px;
+}
+
+.outline-section.active {
+  border-left-color: var(--accent);
+}
+
+.outline-section h2 {
   display: flex;
   gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
+  align-items: center;
+  margin: 0 0 5px;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.35;
+  letter-spacing: 0;
 }
 
-.chapter-list {
+.outline-section h2 span {
   display: grid;
-  gap: 12px;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--panel-strong);
+  color: var(--accent);
+  font-size: 12px;
 }
 
-.route-button,
-.chapter-button {
+.outline-section ol {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0 0 0 16px;
+  list-style: none;
+}
+
+.outline-section p {
+  margin: 5px 0 10px 30px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.outline-chapter {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: center;
   width: 100%;
-  padding: 9px 10px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
   text-align: left;
 }
 
-.route-button {
-  flex: 0 0 auto;
-  width: auto;
-  min-width: 106px;
-  max-width: 142px;
+.outline-chapter:hover,
+.outline-chapter.active {
+  background: var(--panel-strong);
+  color: var(--ink);
 }
 
-.route-button.active,
-.chapter-button.active {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
-}
-
-.route-button strong,
-.chapter-button strong {
-  display: block;
-  margin-bottom: 3px;
-}
-
-.route-button span,
-.chapter-button span {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.route-button span {
-  display: none;
-}
-
-.volume-group {
-  display: grid;
-  gap: 7px;
-}
-
-.volume-group h2 {
-  position: sticky;
-  top: -18px;
-  z-index: 1;
-  padding: 6px 2px;
+.outline-number {
   color: var(--warm);
-  background: color-mix(in srgb, var(--panel) 86%, transparent);
   font-size: 13px;
-  letter-spacing: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.outline-title {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outline-meta {
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .reader-main {
