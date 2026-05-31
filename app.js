@@ -140,6 +140,18 @@ function getChapter(book, payload, route) {
   return visible.find((chapter) => chapter.id === state.chapterId) || visible[0] || payload.chapters[0];
 }
 
+function groupedByVolume(chapters) {
+  return chapters.reduce((groups, chapter) => {
+    const existing = groups.find((group) => group.volume === chapter.volume);
+    if (existing) {
+      existing.items.push(chapter);
+    } else {
+      groups.push({ volume: chapter.volume, items: [chapter] });
+    }
+    return groups;
+  }, []);
+}
+
 function renderBook(book) {
   applySettings();
   const payload = buildBookPayload(book);
@@ -153,8 +165,13 @@ function renderBook(book) {
 
   app.innerHTML = `
     <div class="reader-layout">
+      <button class="toc-fab" id="openToc" type="button">目录</button>
+      <div class="toc-scrim" id="tocScrim"></div>
       <aside class="reader-sidebar">
-        <a class="back-link" href="#">返回图书馆</a>
+        <div class="toc-top">
+          <a class="back-link" href="#">返回图书馆</a>
+          <button class="toc-close" id="closeToc" type="button" aria-label="关闭目录">×</button>
+        </div>
         <div class="reader-brand">
           <div class="reader-mark">${escapeHtml(book.coverMark)}</div>
           <div>
@@ -180,6 +197,7 @@ function renderBook(book) {
             </select>
           </div>
         </section>
+        <div class="toc-label">精读路线</div>
         <div class="route-list">
           ${book.routes.map((item) => `
             <button class="route-button ${item.id === route.id ? "active" : ""}" type="button" data-route="${item.id}">
@@ -188,12 +206,18 @@ function renderBook(book) {
             </button>
           `).join("")}
         </div>
+        <div class="toc-label">章节目录</div>
         <div class="chapter-list">
-          ${chapters.map((item) => `
-            <button class="chapter-button ${item.id === chapter.id ? "active" : ""}" type="button" data-chapter="${item.id}">
-              <strong>${escapeHtml(item.title)}</strong>
-              <span>${escapeHtml(item.volume)} · ${item.translation.length ? "已译" : "待补"}</span>
-            </button>
+          ${groupedByVolume(chapters).map((group) => `
+            <section class="volume-group">
+              <h2>${escapeHtml(group.volume)}</h2>
+              ${group.items.map((item) => `
+                <button class="chapter-button ${item.id === chapter.id ? "active" : ""}" type="button" data-chapter="${item.id}">
+                  <strong>${escapeHtml(item.title)}</strong>
+                  <span>${item.translation.length} 段译文 · ${item.translation.length ? "已译" : "待补"}</span>
+                </button>
+              `).join("")}
+            </section>
           `).join("")}
         </div>
       </aside>
@@ -250,16 +274,28 @@ function renderBook(book) {
     </div>
   `;
 
+  document.querySelector("#openToc").addEventListener("click", () => {
+    document.body.classList.add("toc-open");
+  });
+  document.querySelector("#closeToc").addEventListener("click", () => {
+    document.body.classList.remove("toc-open");
+  });
+  document.querySelector("#tocScrim").addEventListener("click", () => {
+    document.body.classList.remove("toc-open");
+  });
+
   document.querySelectorAll("[data-route]").forEach((button) => {
     button.addEventListener("click", () => {
       state.routeId = button.dataset.route;
       state.chapterId = "";
+      document.body.classList.remove("toc-open");
       renderBook(book);
     });
   });
   document.querySelectorAll("[data-chapter]").forEach((button) => {
     button.addEventListener("click", () => {
       state.chapterId = button.dataset.chapter;
+      document.body.classList.remove("toc-open");
       renderBook(book);
     });
   });
